@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaundryHub | Smart Laundry Operations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'webapp/styles.css' %}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="app-header">
+            <nav class="topbar">
+                <div class="brand">
+                    <span class="brand-mark">LH</span>
+                    <div>
+                        <p class="eyebrow">Laundry Management</p>
+                        <h1>LaundryHub</h1>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button id="changeRoleButton" class="secondary-button hidden">Change role</button>
+                    <a href="/admin/" class="ghost-link" target="_blank" rel="noreferrer">Admin</a>
+                    <a href="/api/docs/swagger/" class="ghost-link" target="_blank" rel="noreferrer">API Docs</a>
+                    <button id="logoutButton" class="secondary-button hidden">Log out</button>
+                </div>
+            </nav>
+        </header>
+
+        <main class="dashboard-layout">
+            <section class="hero-panel" id="heroPanel">
+                <div class="hero-copy">
+                    <p class="eyebrow">Pickup. Process. Deliver.</p>
+                    <h2>Laundry operations for customers, workers, and the shop owner.</h2>
+                    <p class="hero-text">
+                        Create orders, track processing, manage pricing, and hand over clothes safely with password-based verification.
+                    </p>
+                    <div class="hero-cta-row">
+                        <a href="#authPanel" class="primary-link">Get started</a>
+                        <a href="#rolePanel" class="ghost-link">Choose role</a>
+                    </div>
+                </div>
+                <div class="hero-stats">
+                    <article class="stat-card">
+                        <span>Active services</span>
+                        <strong id="serviceCount">0</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span>Workflow</span>
+                        <strong>6 stages</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span>Verification</span>
+                        <strong>Password check</strong>
+                    </article>
+                </div>
+            </section>
+
+            <section class="panel" id="rolePanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Role selection</p>
+                        <h3>Choose how you want to enter the system</h3>
+                    </div>
+                </div>
+                <div class="role-selector" id="roleSelector">
+                    <button class="role-card active" data-role="CUSTOMER">
+                        <span class="role-label">Customer</span>
+                        <strong>Book services and track orders</strong>
+                    </button>
+                    <button class="role-card" data-role="WORKER">
+                        <span class="role-label">Worker</span>
+                        <strong>Update laundry processing status</strong>
+                    </button>
+                    <button class="role-card" data-role="ADMIN">
+                        <span class="role-label">Admin</span>
+                        <strong>Manage pricing, services, and issues</strong>
+                    </button>
+                </div>
+                <p class="section-note" id="roleDescription">Customer login selected. New signup will create a customer account.</p>
+            </section>
+
+            <section class="panel auth-panel" id="authPanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Account</p>
+                        <h3 id="authTitle">Customer login or signup</h3>
+                    </div>
+                    <div class="tab-switcher">
+                        <button class="tab-button active" data-tab="login">Login</button>
+                        <button class="tab-button" data-tab="signup">Signup</button>
+                    </div>
+                </div>
+
+                <form id="loginForm" class="auth-form">
+                    <label>Email
+                        <input type="email" name="email" placeholder="user@example.com" required>
+                    </label>
+                    <label>Password
+                        <input type="password" name="password" placeholder="Enter your password" required>
+                    </label>
+                    <p class="section-note">Login will only work for the selected role above.</p>
+                    <button type="submit" class="primary-button">Login</button>
+                </form>
+
+                <form id="signupForm" class="auth-form hidden">
+                    <label>Email
+                        <input type="email" name="email" placeholder="user@example.com" required>
+                    </label>
+                    <label>Username
+                        <input type="text" name="username" placeholder="janedoe" required>
+                    </label>
+                    <label>Password
+                        <input type="password" name="password" placeholder="Create a strong password" required>
+                    </label>
+                    <label>Confirm password
+                        <input type="password" name="confirm_password" placeholder="Repeat your password" required>
+                    </label>
+                    <p class="section-note">Signup will create a new account in the selected role.</p>
+                    <button type="submit" class="primary-button">Create account</button>
+                </form>
+            </section>
+
+            <section class="panel service-panel" id="servicePanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Services</p>
+                        <h3>Available laundry services</h3>
+                    </div>
+                    <button id="refreshServicesButton" class="secondary-button">Refresh</button>
+                </div>
+                <div id="serviceGrid" class="service-grid"></div>
+            </section>
+
+            <section class="panel user-panel hidden" id="userPanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Customer</p>
+                        <h3>Your dashboard</h3>
+                    </div>
+                    <div class="user-badge" id="userBadge"></div>
+                </div>
+
+                <div class="panel-split">
+                    <div class="subpanel">
+                        <h4>Create order</h4>
+                        <p id="orderHelperText" class="section-note hidden"></p>
+                        <form id="orderForm" class="stack-form">
+                            <label>Drop-off date
+                                <input type="date" name="drop_off_date" required>
+                            </label>
+                            <label>Pickup date
+                                <input type="date" name="pickup_date" required>
+                            </label>
+                            <div id="orderItems" class="order-items"></div>
+                            <label>Account password confirmation
+                                <input type="password" name="account_password" placeholder="Required to confirm handover" required>
+                            </label>
+                            <button type="button" id="addItemButton" class="secondary-button">Add another service</button>
+                            <button type="submit" class="primary-button">Place order</button>
+                        </form>
+                    </div>
+                    <div class="subpanel">
+                        <div class="subpanel-heading">
+                            <h4>Order history</h4>
+                            <select id="statusFilter">
+                                <option value="">All statuses</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="ACCEPTED">Accepted</option>
+                                <option value="PROCESSING">Processing</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="READY_FOR_DELIVERY">Ready for Delivery</option>
+                                <option value="DELIVERED">Delivered</option>
+                            </select>
+                        </div>
+                        <div id="orderList" class="order-list"></div>
+                    </div>
+                </div>
+                <div class="panel-split secondary-split">
+                    <div class="subpanel">
+                        <h4>Report issue</h4>
+                        <form id="issueForm" class="stack-form">
+                            <label>Order
+                                <select name="order_id" id="issueOrderSelect" required></select>
+                            </label>
+                            <label>Issue type
+                                <select name="issue_type" required>
+                                    <option value="DAMAGED_ITEM">Damaged Item</option>
+                                    <option value="MISSING_ITEM">Missing Item</option>
+                                    <option value="WRONG_QUANTITY">Wrong Quantity</option>
+                                    <option value="BILLING_PROBLEM">Billing Problem</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </label>
+                            <label>Description
+                                <textarea class="small-input" name="description" placeholder="Describe the problem" required></textarea>
+                            </label>
+                            <button type="submit" class="primary-button">Submit issue</button>
+                        </form>
+                    </div>
+                    <div class="subpanel">
+                        <h4>Your issue history</h4>
+                        <div id="customerIssues" class="order-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel worker-panel hidden" id="workerPanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Worker</p>
+                        <h3>Processing board</h3>
+                    </div>
+                    <button id="refreshWorkerOrdersButton" class="secondary-button">Refresh tasks</button>
+                </div>
+                <p class="section-note">Workers can move orders through processing. Only when an order is ready for delivery will password verification appear for the final handoff.</p>
+                <div id="workerOrders" class="order-list"></div>
+            </section>
+
+            <section class="panel admin-panel hidden" id="adminPanel">
+                <div class="panel-header compact-header">
+                    <div>
+                        <p class="eyebrow">Admin</p>
+                        <h3>Owner control panel</h3>
+                    </div>
+                    <button id="refreshAnalyticsButton" class="secondary-button">Refresh analytics</button>
+                </div>
+
+                <div id="analyticsCards" class="analytics-grid"></div>
+
+                <div class="panel-split admin-split">
+                    <div class="subpanel">
+                        <h4>Create staff account</h4>
+                        <p class="section-note">Use this to add another admin or a worker account.</p>
+                        <form id="staffAccountForm" class="stack-form">
+                            <label>Role
+                                <select name="role" required>
+                                    <option value="WORKER">Worker</option>
+                                    <option value="ADMIN">Admin</option>
+                                </select>
+                            </label>
+                            <label>Email
+                                <input type="email" name="email" placeholder="staff@example.com" required>
+                            </label>
+                            <label>Username
+                                <input type="text" name="username" placeholder="staffmember" required>
+                            </label>
+                            <label>Password
+                                <input type="password" name="password" placeholder="Create a password" required>
+                            </label>
+                            <label>Confirm password
+                                <input type="password" name="confirm_password" placeholder="Repeat password" required>
+                            </label>
+                            <button type="submit" class="primary-button">Create staff account</button>
+                        </form>
+                    </div>
+                    <div class="subpanel">
+                        <h4>Create service</h4>
+                        <p class="section-note">Service cost is controlled only here. Existing orders keep their original price snapshot.</p>
+                        <form id="serviceForm" class="stack-form">
+                            <label>Service name
+                                <input type="text" name="name" placeholder="Wash & Fold" required>
+                            </label>
+                            <label>Price
+                                <input type="number" name="price" step="0.01" min="0" placeholder="79.99" required>
+                            </label>
+                            <button type="submit" class="primary-button">Add service</button>
+                        </form>
+                        <div id="adminServiceList" class="service-grid compact-service-grid"></div>
+                    </div>
+                    <div class="subpanel">
+                        <div class="subpanel-heading">
+                            <h4>All orders and corrections</h4>
+                            <button id="refreshAllOrdersButton" class="secondary-button">Refresh orders</button>
+                        </div>
+                        <p class="section-note">Admin can update status, add issue notes, and delete incorrect orders when needed.</p>
+                        <div id="adminOrders" class="order-list"></div>
+                    </div>
+                </div>
+                <div class="panel-split secondary-split">
+                    <div class="subpanel">
+                        <h4>Open issues</h4>
+                        <div id="adminIssues" class="order-list"></div>
+                    </div>
+                    <div class="subpanel">
+                        <h4>Staff directory</h4>
+                        <div id="staffDirectory" class="order-list"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="{% static 'webapp/app.js' %}"></script>
+</body>
+</html>
